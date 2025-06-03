@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# system_ximenes
 
-## Getting Started
+Sistema de busca de CEP e endereços utilizando a API ViaCEP.
 
-First, run the development server:
+## 🚀 Como rodar o projeto
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### 1. Clone o repositório
+
+```sh
+git clone https://github.com/zacsampaio/system_ximenes.git
+cd system_ximenes
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Instale as dependências
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```sh
+npm install
+```
+ou
+```sh
+yarn
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Rode o projeto em modo desenvolvimento
 
-## Learn More
+```sh
+npm run dev
+```
+ou
+```sh
+yarn dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Acesse [http://localhost:3000](http://localhost:3000) no seu navegador.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Build para produção
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```sh
+npm run build
+```
+ou
+```sh
+yarn build
+```
 
-## Deploy on Vercel
+### 5. Start em produção
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```sh
+npm start
+```
+ou
+```sh
+yarn start
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 📦 Tecnologias
+
+- Next.js
+- React
+- TypeScript
+- shadcn/ui
+- React Query
+- Sonner (toast)
+- API ViaCEP
+
+---
+
+## ✨ Funcionalidades
+
+- Busca por CEP
+- Busca por endereço (UF, cidade e logradouro)
+- Exibição dos resultados em tabela
+
+---
+
+> Qualquer dúvida, abra uma issue ou entre em contato!

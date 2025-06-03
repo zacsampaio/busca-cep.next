@@ -1,103 +1,168 @@
-import Image from "next/image";
+"use client";
+
+import { CepResultTable } from "@/components/CepResultTable";
+import { Header } from "@/components/header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { addressSearch } from "@/lib/api/addressSearch";
+import { cepSearch, CepSearchResponse } from "@/lib/api/cepSearch";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod";
+
+const cepSchema = z
+  .string()
+  .regex(
+    /^\d{5}-?\d{3}$/,
+    "CEP deve conter 8 dígitos numéricos (com ou sem hífen)"
+  );
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [searchType, setSearchType] = useState<"cep" | "endereco">("cep");
+  const [cep, setCep] = useState<string>("");
+  const [uf, setUf] = useState<string>("");
+  const [cidade, setCidade] = useState<string>("");
+  const [logradouro, setLogradouro] = useState<string>("");
+  const [results, setResults] = useState<CepSearchResponse[]>([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const { isLoading, refetch } = useQuery({
+    queryKey: ["cep", cep],
+    queryFn: () => cepSearch(cep),
+    enabled: false,
+  });
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setResults([]);
+    if (searchType === "cep") {
+      const result = cepSchema.safeParse(cep);
+      if (!result.success) {
+        toast.error(result.error.errors[0].message);
+        return;
+      }
+      refetch({ throwOnError: true })
+        .then((res) => {
+          if (res.data) setResults((prev) => [...prev, res.data]);
+        })
+        .catch((error) => {
+          toast.error(
+            "Erro ao buscar CEP: " +
+              (error instanceof Error ? error.message : "Tente novamente.")
+          );
+        });
+    } else {
+      if (!uf || !cidade || !logradouro) {
+        toast.error("Preencha UF, Cidade e Logradouro.");
+        return;
+      }
+      // Chame sua função addressSearch aqui
+      addressSearch(uf, cidade, logradouro)
+        .then((res) => setResults(res))
+        .catch((error) =>
+          toast.error(
+            "Erro ao buscar endereço: " +
+              (error instanceof Error ? error.message : "Tente novamente.")
+          )
+        );
+    }
+  }
+
+  return (
+    <>
+      <Header />
+      <div>
+        <div className="flex justify-center mt-20 gap-4">
+          <form onSubmit={handleSubmit} className="flex items-center gap-2">
+            <Select
+              value={searchType}
+              onValueChange={(v) => setSearchType(v as "cep" | "endereco")}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Tipo de busca" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cep">Buscar por CEP</SelectItem>
+                <SelectItem value="endereco">Buscar por Endereço</SelectItem>
+              </SelectContent>
+            </Select>
+            {searchType === "cep" ? (
+              <Input
+                id="cep"
+                value={cep}
+                onChange={(e) => setCep(e.target.value)}
+                placeholder="Digite o CEP"
+                maxLength={9}
+              />
+            ) : (
+              <>
+                <Input
+                  placeholder="UF"
+                  value={uf}
+                  onChange={(e) => setUf(e.target.value.toUpperCase())}
+                  maxLength={2}
+                  className="w-16"
+                />
+                <Input
+                  placeholder="Cidade"
+                  value={cidade}
+                  onChange={(e) => setCidade(e.target.value)}
+                  className="w-40"
+                />
+                <Input
+                  placeholder="Logradouro"
+                  value={logradouro}
+                  onChange={(e) => setLogradouro(e.target.value)}
+                  className="w-56"
+                />
+              </>
+            )}
+            <Button
+              disabled={
+                isLoading ||
+                (searchType === "cep" ? !cep : !uf || !cidade || !logradouro)
+              }
+              type="submit"
+              className="cursor-pointer"
+            >
+              Buscar
+            </Button>
+          </form>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        {results.length > 0 && (
+          <Table className="w-[400px] mx-auto mt-16 gap-6">
+            <TableHeader>
+              <TableRow>
+                <TableHead>CEP</TableHead>
+                <TableHead>Logradouro</TableHead>
+                <TableHead>Complemento</TableHead>
+                <TableHead>Bairro</TableHead>
+                <TableHead>Cidade</TableHead>
+                <TableHead>Estado</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {results.map((data, index) => (
+                <CepResultTable key={data.cep + index} data={data} />
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+    </>
   );
 }

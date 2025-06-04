@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "system.ximenes",
+  title: "busca-cep.next",
 };
 
 export default function RootLayout({

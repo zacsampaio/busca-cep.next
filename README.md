@@ -74,5 +74,3 @@ yarn start
 - Exibição dos resultados em tabela
 
 ---
-
-> Qualquer dúvida, abra uma issue ou entre em contato!

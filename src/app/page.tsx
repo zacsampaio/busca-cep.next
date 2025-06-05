@@ -85,9 +85,12 @@ export default function Home() {
   return (
     <>
       <Header />
-      <div>
+      <div className="px-4 max-w-4xl mx-auto">
         <div className="flex justify-center mt-20 gap-4">
-          <form onSubmit={handleSubmit} className="flex items-center gap-2">
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col sm:flex-row items-flex gap-2"
+          >
             <Select
               value={searchType}
               onValueChange={(v) => setSearchType(v as "cep" | "endereco")}
@@ -144,7 +147,7 @@ export default function Home() {
           </form>
         </div>
         {results.length > 0 && (
-          <Table className="w-[400px] mx-auto mt-16 gap-6">
+          <Table className="min-w-[600px] w-full mx-auto mt-16 gap-6">
             <TableHeader>
               <TableRow>
                 <TableHead>CEP</TableHead>

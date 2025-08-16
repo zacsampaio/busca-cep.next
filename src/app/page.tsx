@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { addressSearch } from "@/lib/api/addressSearch";
 import { cepSearch, CepSearchResponse } from "@/lib/api/cepSearch";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -28,8 +28,8 @@ import { z } from "zod";
 const cepSchema = z
   .string()
   .regex(
-    /^\d{5}-?\d{3}$/,
-    "CEP deve conter 8 dígitos numéricos (com ou sem hífen)"
+    /^\d{2}[-.]?\d{3}[-.]?\d{3}$/,
+    "Por favor, digite um CEP válido com 8 números. Pode usar ponto ou hífen."
   );
 
 export default function Home() {
@@ -39,32 +39,55 @@ export default function Home() {
   const [cidade, setCidade] = useState<string>("");
   const [logradouro, setLogradouro] = useState<string>("");
   const [results, setResults] = useState<CepSearchResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { isLoading, refetch } = useQuery({
-    queryKey: ["cep", cep],
-    queryFn: () => cepSearch(cep),
-    enabled: false,
-  });
+  function normalizeCep(value: string) {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length === 8) {
+      return digits.replace(/(\d{2})(\d{3})(\d{3})/, "$1.$2-$3");
+    }
+    return value;
+  }
+
+  function formatCepInput(value: string){
+    const digits = value.replace(/\D/g, "");
+    if (digits.length <= 2) return digits
+    if (digits.length <= 5) return digits.replace(/(\d{2})(\d{0,3})/, "$1.$2");
+    return digits.replace(/(\d{2})(\d{3})(\d{0,3})/, "$1.$2-$3");
+  }
+
+  const queryClient = useQueryClient();
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setResults([]);
+
     if (searchType === "cep") {
       const result = cepSchema.safeParse(cep);
       if (!result.success) {
         toast.error(result.error.errors[0].message);
         return;
       }
-      refetch({ throwOnError: true })
+
+      const normalizedCep = normalizeCep(cep);
+      setCep(normalizedCep);
+      setIsLoading(true)
+
+      queryClient
+        .fetchQuery({
+          queryKey: ["cep", normalizedCep],
+          queryFn: () => cepSearch(normalizedCep),
+        })
         .then((res) => {
-          if (res.data) setResults((prev) => [...prev, res.data]);
+          setResults((prev) => [...prev, res]);
         })
         .catch((error) => {
           toast.error(
-            "Erro ao buscar CEP: " +
+            "Não foi possível buscar o CEP: " +
               (error instanceof Error ? error.message : "Tente novamente.")
           );
-        });
+        })
+        .finally(() => setIsLoading(false));
     } else {
       if (!uf || !cidade || !logradouro) {
         toast.error("Preencha UF, Cidade e Logradouro.");
@@ -107,9 +130,9 @@ export default function Home() {
               <Input
                 id="cep"
                 value={cep}
-                onChange={(e) => setCep(e.target.value)}
+                onChange={(e) => setCep(formatCepInput(e.target.value))}
                 placeholder="Digite o CEP"
-                maxLength={9}
+                maxLength={10}
               />
             ) : (
               <>
